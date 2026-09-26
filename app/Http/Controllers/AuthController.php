@@ -10,6 +10,7 @@ use App\Mail\VerificationCodeMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -396,4 +397,48 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    public function updateProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'username' => 'sometimes|string|max:255|unique:users,username,' . $request->user()->id,
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Update failed',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        try {
+            $user = $request->user();
+
+            if ($request->has('username')) {
+                $user->username = $request->username;
+            }
+
+            if ($request->hasFile('profile_picture')) {
+                if ($user->profile_picture) {
+                    Storage::disk('public')->delete($user->profile_picture);
+                }
+
+                $user->profile_picture = $request->file('profile_picture')->store('profile_pictures', 'public');
+            }
+
+            $user->save();
+
+            return response()->json([
+                'message' => 'Profile updated successfully.',
+                'user' => $user,
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'message' => 'Server Error',
+                'error' => $error,
+            ], 500);
+        }
+    }
+
 }
