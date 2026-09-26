@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable(['code', 'expires_at'])]
-class AccountVerification extends Model
+class PasswordResetToken extends Model
 {
     public function user()
     {
